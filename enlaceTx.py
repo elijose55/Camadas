@@ -70,8 +70,19 @@ class TX(object):
         of transmission, this erase all content of the buffer
         in order to save the new value.
         """
+        tamanho = len(data)
+        head = (tamanho).to_bytes(4, byteorder='big')
+        eop = "0xF10xF20xF30xF4"
+        bs = "0x00"
+        eop_stuffed = "0xF1" + bs + "0xF2" + bs +"0xF3"+ bs +"0xF4"
+        data_string = str(data)
+        teste = data_string.replace(eop,bs)
+        print(teste)
+
+
         self.transLen   = 0
         self.buffer = data
+
         self.threadMutex  = True
 
     def getBufferLen(self):

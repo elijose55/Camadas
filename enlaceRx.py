@@ -78,6 +78,8 @@ class RX(object):
     def getAllBuffer(self, len):
         """ Read ALL reception buffer and clears it
         """
+
+
         self.threadPause()
         b = self.buffer[:]
         self.clearBuffer()
@@ -103,6 +105,8 @@ class RX(object):
         
         #if self.getBufferLen() < size:
         #print("ERROS!!! TERIA DE LER %s E LEU APENAS %s", (size,temPraLer))
+
+        head = (tamanho).to_bytes(4, byteorder='big') #protocolo do head
         size = 0
         print(self.getBufferLen())
         while(self.getBufferLen() == 0 or self.getBufferLen() > size):
