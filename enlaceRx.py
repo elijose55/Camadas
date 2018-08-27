@@ -78,8 +78,6 @@ class RX(object):
     def getAllBuffer(self, len):
         """ Read ALL reception buffer and clears it
         """
-
-
         self.threadPause()
         b = self.buffer[:]
         self.clearBuffer()
@@ -104,22 +102,52 @@ class RX(object):
 #        print('leu %s ' + str(temPraLer) )
         
         #if self.getBufferLen() < size:
-        #print("ERROS!!! TERIA DE LER %s E LEU APENAS %s", (size,temPraLer))
+            #print("ERROS!!! TERIA DE LER %s E LEU APENAS %s", (size,temPraLer))
+        size = 0   
 
-        head = (tamanho).to_bytes(4, byteorder='big') #protocolo do head
-        size = 0
-        print(self.getBufferLen())
-        while(self.getBufferLen() == 0 or self.getBufferLen() > size):
-            
-            time.sleep(2.0)
-            size = self.getBufferLen();
-#                 
-        return(self.getBuffer(size), size)
+        while(self.getBufferLen() > size or self.getBufferLen() == 0):
+            time.sleep(2)
+            size = self.getBufferLen()
+        return(self.getBuffer(size),size)
 
 
     def clearBuffer(self):
         """ Clear the reception buffer
         """
         self.buffer = b""
+    
+    def desfaz_package(self, package):
+        #Faz o desempacotamento dos dados baseado-se no protocolo GG7.
+        #Separa o payload do restante e verifica se o tamanho do payload esta correto
+        head_size = 12
+        found_eop = False
+        byte_stuff = bytes.fromhex("AA")
+        eop = bytes.fromhex("FF FE FD FC")
+        head = package[0:12]
+        print(head)
+        package = package[12:]
+        payload_size = int.from_bytes(head, byteorder = "big")
+        for i in range(len(package)):
+            if package[i:i+4] == eop:
+                if package[i-1] == byte_stuff:
+                    #retira os bytes stuff
+                    p1 = package[0:i-1]
+                    p2 = package[i:]
+                    package = p1 + p2
+                else:
+                    found_eop = True
+                    print("EOP encontrado na posição:{0}".format(i))
+                    package = package[0:-4]
+                    if len(package) != payload_size:
+                        print("ERRO! Número de Bytes do Payload diferentes do informado no HEAD. Bytes Payload recebido:{0}".format(len(package)))
+                        print("Bytes que foram enviados:{0}".format(payload_size))
+                    break
+        if not found_eop:
+            print("ERRO! EOP não encontrado")
+        payload = package
+        print(len(payload))
+        return payload
+                
+
 
 

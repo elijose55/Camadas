@@ -35,7 +35,7 @@ class TX(object):
         """
         while not self.threadStop:
             if(self.threadMutex):
-                self.transLen    = self.fisica.write(self.buffer)
+                self.transLen = self.fisica.write(self.buffer)
                 #print("O tamanho transmitido. IMpressao dentro do thread {}" .format(self.transLen))
                 self.threadMutex = False
 
@@ -70,19 +70,8 @@ class TX(object):
         of transmission, this erase all content of the buffer
         in order to save the new value.
         """
-        tamanho = len(data)
-        head = (tamanho).to_bytes(4, byteorder='big')
-        eop = "0xF10xF20xF30xF4"
-        bs = "0x00"
-        eop_stuffed = "0xF1" + bs + "0xF2" + bs +"0xF3"+ bs +"0xF4"
-        data_string = str(data)
-        teste = data_string.replace(eop,bs)
-        print(teste)
-
-
         self.transLen   = 0
         self.buffer = data
-
         self.threadMutex  = True
 
     def getBufferLen(self):
@@ -101,4 +90,31 @@ class TX(object):
         """ Return true if a transmission is ongoing
         """
         return(self.threadMutex)
+
+    def cria_package(self, payload):
+        #pega os dados e empacota com HEAD, EOP e byte Stuffing
+
+        byte_stuff = bytes.fromhex("AA")
+        eop = bytes.fromhex("FF FE FD FC")
+        payload_size = len(payload)
+
+        for i in range(len(payload)):
+
+            if payload[i:i+4] == eop:
+                p1 = payload[0:i]
+                p2 = byte_stuff + payload[i:]
+                payload = p1 + p2
+
+        head = (payload_size).to_bytes(12, byteorder = "big")
+        package = head + payload + eop
+        overhead = len(package) / len(payload)
+        print("OverHead:{0}".format(overhead))
+        print(len(payload))
+        print(package)
+        return package, len(payload)
+        
+
+
+        
+        
 

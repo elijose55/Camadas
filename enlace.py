@@ -53,15 +53,18 @@ class enlace(object):
     def sendData(self, data):
         """ Send data over the enlace interface
         """
-        self.tx.sendBuffer(data)
+
+        pacote, lenPayload = self.tx.cria_package(data)
+        self.tx.sendBuffer(pacote)
+        return lenPayload
+
 
     def getData(self):
         """ Get n data over the enlace interface
         Return the byte array and the size of the buffer
         """
-        
-        data,size = self.rx.getNData()
-        print('entrou na leitura e tentara ler ' + str(size) )
-        print("Tempo estimado: {}" .format((size*10)/115200))
+        print('entrou na leitura e tentara ler ')
+        data , size= self.rx.getNData()
+        payload = self.rx.desfaz_package(data)
        
-        return(data, len(data))
+        return(payload, len(payload))

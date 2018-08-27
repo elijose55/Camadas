@@ -8,11 +8,11 @@
 
 # Importa pacote de comunicação serial
 import serial
+import time
+import sys
 
 # importa pacote para conversão binário ascii
 import binascii
-
-import time
 
 #################################
 # Interface com a camada física #
@@ -50,11 +50,12 @@ class fisica(object):
     def flush(self):
         """ Clear serial data
         """
-        start = time.time()
+        #starttime = time.time()
         self.port.flushInput()
         self.port.flushOutput()
-        end = time.time()
-        print("Demorou : {} segundos" .format(end - start))
+        #finaltime = time.time() - starttime
+
+        #return finaltime
 
     def encode(self, data):
         """ Encode TX as ASCII data for transmission
@@ -77,6 +78,9 @@ class fisica(object):
         Software flow control between both
         sides of communication.
         """
+        print(txBuffer)
+        print("----------------")
+        print(self.encode(txBuffer))
         nTx = self.port.write(self.encode(txBuffer))
         self.port.flush()
         return(nTx/2)
@@ -101,6 +105,7 @@ class fisica(object):
             nRx = len(rxBuffer)
             return(rxBufferDecoded, nRx)
         except :
+            print ("Unexpected error:", sys.exc_info()[0])
             print("[ERRO] interfaceFisica, read, decode. buffer : {}".format(rxBufferValid))
             return(b"", 0)
 
