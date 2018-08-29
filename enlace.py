@@ -50,11 +50,90 @@ class enlace(object):
     ################################
     # Application  interface       #
     ################################
+
+    def comunicacao(self, data, user):
+        data_null = b"0x00"
+        while True:
+            if user == "client":
+                tipo_msg = 1
+
+                package_1 = self.tx.criaPackage(data_null, tipo_msg)
+                self.sendData(package)
+                print("Enviada mensagem do tipo 1")
+
+                start_time1 = time.time()
+                while True:
+                    rxBuffer, nRx = self.getData()
+                    if int.frombytes(rxBuffer[:1], byteorder = "big") == 2:
+                        self.rx.clearBuffer()
+                        print("Mensagem tipo 2 recebida")
+                        package_2 = self.tx.criaPackage(data_null, 3)
+                        self.sendData(package_2)
+                        print("Enviada mensagem do tipo 3")
+                        start_time2 = time.time()
+                        while True:
+                            package_final = self.tx.criaPackage(data, 4)
+                            self.sendData(package_final)
+                            print("Enviada mensagem de tipo 4, aguardando verificação de consitencia")
+                            time.sleep(0.5)
+                            rxBuffer, nRx = self.getData()
+                            if int.frombytes(rxBuffer[:1], byteorder = "big") == 5:
+                                print("Verificacao de consistencia realizada, encerrando comunicacao")
+
+                                self.rx.clearBuffer()
+                                return
+                            if int.frombytes(rxBuffer[:1], byteorder = "big") == 6:
+                                self.rx.clearBuffer()
+                                print("Verificacao de consistencia não conferiu, reenviando pacote")
+
+                    if time.time()-start_time1 > 5:
+                        print("Mensagem tipo 2 não recebida")
+                        break
+
+            if user == "server":
+                data_transmitida = 0
+                while True:
+                    if data_transmitida != 0:
+                        return data_transmitida
+                    rxBuffer, nRx = self.getData()
+                    if int.frombytes(rxBuffer[:1], byteorder = "big") == 1:
+                        package_1 = self.tx.criaPackage(data_null, 2)
+                        self.sendData(package_1)
+                        print("Recebida mensagem de tipo 1, enviada mensagem do tipo 2 e aguardando mensagem do tipo 3")
+                        start_time = time.time()
+                        while True:
+                            time.sleep(0.5)
+                            rxBuffer, nRx = self.getData()
+                            if int.frombytes(rxBuffer[:1], byteorder = "big") == 3:
+                                self.rx.clearBuffer()
+                                print("Recebida mensagem de tipo 3, esperando pacote de informações")
+                                while True:
+                                    time.sleep(1)
+                                    rxBuffer, nRx = self.getData()
+                                    if int.frombytes(rxBuffer[1:4], byteorder = "big") == nRx:
+                                        data_transmitida = self.getData()
+                                        self.clearBuffer()
+                                        print("Informacoes de payload conferem, enviando mensagem do tipo 5")
+                                        package_2 = self.rx.criaPackage(data_null, 5)
+                                        self.sendData(package_2)
+                                        break
+                                    else:
+                                        print("Informacoes não confere, enviando mensagem do tipo 6")
+                                        package_3 = self.sendData(data_null, 6)
+
+                            if time.time()-start_time > 5:
+                                print("Mensagem de tipo 3 não recebida, reenviando mensagem do tipo 2")
+                                break
+
+
+
+
+
     def sendData(self, data):
         """ Send data over the enlace interface
         """
 
-        pacote, lenPayload = self.tx.cria_package(data)
+        pacote, lenPayload = self.tx.criaPackage(data)
         self.tx.sendBuffer(pacote)
         return lenPayload
 
@@ -66,5 +145,5 @@ class enlace(object):
         print('entrou na leitura e tentara ler ')
         data , size= self.rx.getNData()
         payload = self.rx.desfaz_package(data)
-       
+
         return(payload, len(payload))

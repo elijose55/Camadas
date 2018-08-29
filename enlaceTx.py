@@ -84,14 +84,15 @@ class TX(object):
         """
         #print("O tamanho transmitido. Impressao fora do thread {}" .format(self.transLen))
         return(self.transLen)
-        
+
 
     def getIsBussy(self):
         """ Return true if a transmission is ongoing
         """
         return(self.threadMutex)
 
-    def cria_package(self, payload):
+
+    def criaPackage(self, payload, tipo_msg):
         #pega os dados e empacota com HEAD, EOP e byte Stuffing
 
         byte_stuff = bytes.fromhex("AA")
@@ -105,16 +106,14 @@ class TX(object):
                 p2 = byte_stuff + payload[i:]
                 payload = p1 + p2
 
-        head = (payload_size).to_bytes(12, byteorder = "big")
+        #cria o HEAD
+        payload_head = (payload_size).to_bytes(3, byteorder = "big")
+        message_type = (tipo_msg).to_bytes(1, byteorder = "big")
+        head = message_type + payload_head
+
         package = head + payload + eop
         overhead = len(package) / len(payload)
         print("OverHead:{0}".format(overhead))
         print(len(payload))
         print(package)
         return package, len(payload)
-        
-
-
-        
-        
-

@@ -39,11 +39,11 @@ class Application(tk.Frame):
         self.create_widgets()
 
     def create_widgets(self):
-        
+
         self.selectbutton = tk.Button(self, text="Selecionar imagem", fg="black",
                               command=self.selectimage)
 
-        self.selectbutton.pack(side="top")              
+        self.selectbutton.pack(side="top")
 
         self.sendbutton = tk.Button(self, text="Enviar imagem", fg="black",
                               command=self.sendimage)
@@ -54,9 +54,9 @@ class Application(tk.Frame):
         self.quit.pack(side="bottom")
 
     def selectimage(self):
-        self.filename = askopenfilename() 
-        print("Imagem selecionada")   
-        
+        self.filename = askopenfilename()
+        print("Imagem selecionada")
+
     def sendimage(self):
         root.destroy()
         print("Mensagem enviada")
@@ -67,7 +67,7 @@ def tempo_teorico(n_bytes,baudrate):
     return t
 
 def main(imagem):
-    
+
     # Inicializa enlace ... variavel com possui todos os metodos e propriedades do enlace, que funciona em threading
     com = enlace(serialName)
 
@@ -90,12 +90,6 @@ def main(imagem):
     print(txBuffer)
     txLen    = len(txBuffer)
 
-    # ListTxBuffer = list()
-    # for x in range(0,20):
-    #     ListTxBuffer.append(x)
-    # txBuffer = bytes(ListTxBuffer)
-    # txLen    = len(txBuffer)
-    # print(txLen)
 
     # Transmite dado
     print(" Tamanho da imagem: {0} bytes".format(txLen))
@@ -105,10 +99,10 @@ def main(imagem):
     len_Payload = com.sendData(txBuffer)
 
 
-        
+
     # Atualiza dados da transmissão
     txSize = com.tx.getStatus()
-   
+
 
     # Encerra comunicação
     print("-------------------------")
