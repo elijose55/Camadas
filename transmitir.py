@@ -60,6 +60,8 @@ def main():
     txBuffer = open(filename, "rb").read()
     txLen = len(txBuffer)
 
+    com.comunicacao(txBuffer,"client")
+
 
     # Transmite dado
     print(" Tamanho da imagem: {0} bytes".format(txLen))

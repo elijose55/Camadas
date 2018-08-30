@@ -119,13 +119,13 @@ class RX(object):
     def desfaz_package(self, package):
         #Faz o desempacotamento dos dados baseado-se no protocolo GG7.
         #Separa o payload do restante e verifica se o tamanho do payload esta correto
-        head_size = 12
+        head_size = 4
         found_eop = False
         byte_stuff = bytes.fromhex("AA")
         eop = bytes.fromhex("FF FE FD FC")
-        head = package[0:12]
+        head = package[0:4]
         print(head)
-        package = package[12:]
+        package = package[4:]
         payload_size = int.from_bytes(head, byteorder = "big")
         for i in range(len(package)):
             if package[i:i+4] == eop:
