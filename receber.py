@@ -61,7 +61,7 @@ def main():
     print ("Recebendo dados .... ")
     bytesSeremLidos=com.rx.getBufferLen()
     rxBuffer, nRx = com.getData()
-    x = open('Corinthians.png','wb')
+    x = open('NovaImg.png','wb')
     x.write(rxBuffer)
     x.close()
       

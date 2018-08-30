@@ -14,7 +14,7 @@ from enlace import *
 import time
 from PIL import Image
 from array import array
-import tkinter as tk
+from tkinter import Tk
 from tkinter.filedialog import askopenfilename
 import time
 
@@ -32,42 +32,13 @@ baudrate    = 115200
 
 print("porta COM aberta com sucesso")
 
-class Application(tk.Frame):
-    def __init__(self, master=None):
-        super().__init__(master)
-        self.pack()
-        self.create_widgets()
-
-    def create_widgets(self):
-
-        self.selectbutton = tk.Button(self, text="Selecionar imagem", fg="black",
-                              command=self.selectimage)
-
-        self.selectbutton.pack(side="top")
-
-        self.sendbutton = tk.Button(self, text="Enviar imagem", fg="black",
-                              command=self.sendimage)
-        self.sendbutton.pack(side="top")
-
-        self.quit = tk.Button(self, text="Fechar janela", fg="black",
-                              command=root.destroy)
-        self.quit.pack(side="bottom")
-
-    def selectimage(self):
-        self.filename = askopenfilename()
-        print("Imagem selecionada")
-
-    def sendimage(self):
-        root.destroy()
-        print("Mensagem enviada")
-
 
 def tempo_teorico(n_bytes,baudrate):
     t = (n_bytes*10)/baudrate
     return t
 
-def main(imagem):
-
+def main():
+    
     # Inicializa enlace ... variavel com possui todos os metodos e propriedades do enlace, que funciona em threading
     com = enlace(serialName)
 
@@ -83,12 +54,11 @@ def main(imagem):
     #como fazer isso
     print ("gerando dados para transmissao :")
 
-    with open(imagem, "rb") as imageFile:
-        f = imageFile.read()
-        img = bytearray(f)
-    txBuffer = bytes(img)
-    print(txBuffer)
-    txLen    = len(txBuffer)
+    Tk().withdraw() # we don't want a full GUI, so keep the root window from appearing
+    filename = askopenfilename() # show an "Open" dialog box and return the path to the selected file
+
+    txBuffer = open(filename, "rb").read()
+    txLen = len(txBuffer)
 
 
     # Transmite dado
@@ -116,7 +86,4 @@ def main(imagem):
 
     #so roda o main quando for executado do terminal ... se for chamado dentro de outro modulo nao roda
 if __name__ == "__main__":
-    root = tk.Tk()
-    app = Application(master=root)
-    app.mainloop()
-    main(app.filename)
+    main()
