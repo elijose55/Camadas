@@ -105,10 +105,15 @@ class RX(object):
             #print("ERROS!!! TERIA DE LER %s E LEU APENAS %s", (size,temPraLer))
         size = 0   
 
-        while(self.getBufferLen() > size or self.getBufferLen() == 0):
+        while(self.getBufferLen() > size):
             time.sleep(2)
+            print("esperando")
             size = self.getBufferLen()
-        return(self.getBuffer(size),size)
+
+        if size == 0:
+            return (0,0)
+        else:
+            return(self.getBuffer(size),size)
 
 
     def clearBuffer(self):
@@ -121,6 +126,7 @@ class RX(object):
         #Separa o payload do restante e verifica se o tamanho do payload esta correto
         head_size = 4
         found_eop = False
+        erro = 0
         byte_stuff = bytes.fromhex("AA")
         eop = bytes.fromhex("FF FE FD FC")
         head = package[0:4]
@@ -141,9 +147,12 @@ class RX(object):
                     if len(package) != payload_size:
                         print("ERRO! Número de Bytes do Payload diferentes do informado no HEAD. Bytes Payload recebido:{0}".format(len(package)))
                         print("Bytes que foram enviados:{0}".format(payload_size))
-                    break
+                        erro = 1
+                    return erro
         if not found_eop:
             print("ERRO! EOP não encontrado")
+            erro = 1
+            return erro
         payload = package
         print(len(payload))
         return payload

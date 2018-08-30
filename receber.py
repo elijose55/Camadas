@@ -59,8 +59,12 @@ def main():
     # Faz a recepção dos dados
     
     print ("Recebendo dados .... ")
-    bytesSeremLidos=com.rx.getBufferLen()
-    rxBuffer, nRx = com.getData()
+    #bytesSeremLidos=com.rx.getBufferLen()
+    #rxBuffer, nRx = com.getData()
+
+    data_null = (0).to_bytes(4, byteorder = "big")
+    rxBuffer = com.comunicacao(data_null, "server")
+
     x = open('NovaImg.png','wb')
     x.write(rxBuffer)
     x.close()
