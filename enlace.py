@@ -59,25 +59,28 @@ class enlace(object):
 		while True:
 
 			if user == "client":
-				print("Inicio de transmissao")
 				self.sendData(data_null, 1)
 				print("Enviada mensagem do tipo 1")
-				self.rx.clearBuffer()
 				start_time1 = time.time()
 
 				while True:
 					start_time2 = time.time()
-					rxBuffer, nRx = self.getData()
-					while rxBuffer == 0 and (start_time2-start_time1)<5:
+					size = 10
+					while (self.rx.getBufferLen() == 0 or self.rx.getBufferLen() > size) and (start_time2-start_time1)<5:
 						print("Esperando tipo 2")
-						rxBuffer, nRx = self.getData()
+						time.sleep(0.5)
+						size = self.rx.getBufferLen()
+						print(size)
 						start_time2 = time.time()
 
-					if rxBuffer == 0:
+					#rxBuffer, nRx = self.getData()
+					if size == 0:
 						print("Mensagem tipo 2 não recebida")
 						break
 
 					else:
+						print("algo recebido")
+						rxBuffer = self.getData(size)
 						tipo_msg = self.getType(rxBuffer)
 						print("tipo.:   " + tipo_msg)
 
@@ -88,28 +91,29 @@ class enlace(object):
 							self.sendData(data_null, 3)
 							self.rx.clearBuffer()
 							print("Enviada mensagem do tipo 3")
-							start_time2 = time.time()
+							#start_time2 = time.time()
 
 							while True:
 								self.sendData(data, 4)
-								self.rx.clearBuffer()
+								#self.rx.clearBuffer()
 								start_time1 = time.time()
 								print("Enviada mensagem de tipo 4, aguardando verificação de consitencia")
 								time.sleep(0.5)
-								rxBuffer, nRx = self.getData()
-								start_time2 = time.time()
+								size = 10
+								start_time1 = time.time()
 
-								while rxBuffer == 0 and (start_time2-start_time1)<5:
-									rxBuffer, nRx = self.getData()
+								while (self.rx.getBufferLen() == 0 or self.rx.getBufferLen() > size) and (start_time2-start_time1)<5:
+									print('.')
+									time.sleep(0.5)
+									size = self.rx.getBufferLen()
 									start_time2 = time.time()
 
-								if rxBuffer != 0:
+								if size != 0:
 
 									tipo_msg = self.getType(rxBuffer)
 									print("head..:   " + tipo_msg)
 
 									if tipo_msg == 5:
-										#package_7 = self.tx.criaPackage(data_null, 7)
 										self.sendData(data_null, 7)
 										print("Verificacao de consistencia realizada, encerrando comunicacao")
 										self.rx.clearBuffer()
@@ -124,7 +128,7 @@ class enlace(object):
 										print("Conexao encerrada")
 										return
 								else:
-									print("Resposta não recebida")
+									print("verificação de consistencia não recebida")
 
 
 								if keyboard.is_pressed('q'):
@@ -144,11 +148,15 @@ class enlace(object):
 					if data_transmitida != 0:
 						return data_transmitida
 
-					rxBuffer, nRx = self.getData()
-					while rxBuffer == 0:
+					
+					size = 0
+					while self.rx.getBufferLen() == 0 or self.rx.getBufferLen() > size:
 						print("Recebendo")
-						rxBuffer, nRx = self.getData()
+						time.sleep(1)
+						size = self.rx.getBufferLen()
 
+
+					rxBuffer = self.getData(size)
 					tipo_msg = self.getType(rxBuffer)
 					print("head..:   " + tipo_msg)
 
@@ -161,13 +169,17 @@ class enlace(object):
 							print("enviada mensagem do tipo 2 e aguardando mensagem do tipo 3")
 							self.rx.clearBuffer()
 							time.sleep(0.5)
+							size = 10
+							
 
-							rxBuffer, nRx = self.getData()
-							start_time2 = time.time()
-							while rxBuffer == 0 and (start_time2-start_time1)<5:
+							while (self.rx.getBufferLen() == 0 or self.rx.getBufferLen() > size) and (start_time2-start_time1)<5:
 								print("aguardando tipo 3")
+								time.sleep(0.5)
+								size = self.rx.getBufferLen()
 								start_time2 = time.time()
-								rxBuffer, nRx = self.getData()
+
+							rxBuffer = self.getData(size)
+
 							if rxBuffer == 0:
 								print("mensagem tipo 3 nao recebida")
 							else:
@@ -224,19 +236,18 @@ class enlace(object):
 		return lenPayload
 
 
-	def getData(self):
+	def getData(self,size):
 		""" Get n data over the enlace interface
 		Return the byte array and the size of the buffer
 		"""
-		data, size = self.rx.getNData()
-		#payload = self.rx.desfaz_package(data)
+		data = self.rx.getNData(size)
 
-		return(data, size)
+		return(data)
 
 	def getType(self, package):
 		print(package)
-		print(package[:2])
+		print(package[:1])
 		print("teste")
-		tipo = int.frombytes(package[:2], byteorder = "big")
+		tipo = int.frombytes(package[:1], byteorder = "big")
 		return tipo
 

@@ -93,7 +93,7 @@ class RX(object):
         self.threadResume()
         return(b)
 
-    def getNData(self):
+    def getNData(self,size):
         """ Read N bytes of data from the reception buffer
 
         This function blocks until the number of bytes is received
@@ -101,19 +101,8 @@ class RX(object):
 #        temPraLer = self.getBufferLen()
 #        print('leu %s ' + str(temPraLer) )
         
-        #if self.getBufferLen() < size:
-            #print("ERROS!!! TERIA DE LER %s E LEU APENAS %s", (size,temPraLer))
-        size = 0   
 
-        while(self.getBufferLen() > size):
-            time.sleep(2)
-            print("esperando")
-            size = self.getBufferLen()
-
-        if size == 0:
-            return (0,0)
-        else:
-            return(self.getBuffer(size),size)
+        return(self.getBuffer(size))
 
 
     def clearBuffer(self):
