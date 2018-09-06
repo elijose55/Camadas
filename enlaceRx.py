@@ -33,7 +33,6 @@ class RX(object):
         """ RX thread, to send data in parallel with the code
         essa é a funcao executada quando o thread é chamado. 
         """
-        #TIMERRRRRRRRRRRRRRRRRRR (como estimar?)
         while not self.threadStop:
             start_time = time.time()
             if(self.threadMutex == True):
@@ -111,21 +110,21 @@ class RX(object):
              time.sleep(0.05)
 
         
-        package = self.getBuffer(size)
-        head = package[:head_size]
-        payload = package[head_size:]
+        dados = self.getBuffer(size)
+        head = dados[:10]
+        payload = dados[10:]
 
         #byte_stuff = bytes.fromhex("AA")
         #eop = bytes.fromhex("FF FE FD FC")
-        byte_stuff = bytes('A','utf-8')
-        eop = bytes('abcdef','utf-8')
+        stuff = bytes('P','utf-8')
+        EOP = bytes('vtncgv','utf-8')
 
 
         encontrou = False
 
         for i in range(len(payload)-5):
-            if payload[i:i+6] == eop:
-                if payload[i-1] == byte_stuff[0]:
+            if payload[i:i+6] == EOP:
+                if payload[i-1] == stuff[0]:
                     payload = payload[:i-1] + payload[i+6:] 
                     
                     print("Stuffing e EOP retirados")
@@ -144,7 +143,8 @@ class RX(object):
         #print de erro do tamanho do head com payload
         if headlen != len(payload2):
             print("ERRO!!! TAMANHO INFORMADO NO HEAD NÃO CONDIZ COM PAYLOAD")
-            
+        
+        print(head)
         return(head,payload2)
 
 

@@ -76,15 +76,15 @@ class TX(object):
         self.transLen   = 0
 
         #empacotamento
-        bytes_nulos = bytes(7)
-        tipo_msg = (tipo).to_bytes(1,byteorder='big')
+        und = bytes(7)
+        mtype = (tipo).to_bytes(1,byteorder='big')
         size = ((len(data)).to_bytes(2, byteorder='big'))
 
-        head = b''.join([bytes_nulos, tipo_msg, size])
-        EOP = bytes('abcdef','utf-8')
+        head = b''.join([und, mtype, size])
+        EOP = bytes('vtncgv','utf-8')
         
         #bytestuffing
-        stuff = bytes('A','utf-8')
+        stuff = bytes('P','utf-8')
         for i in range(len(data)-5):
             if data[i:i+6] == EOP:
                 data = data[:i]+stuff+data[i:]
