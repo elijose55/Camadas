@@ -27,12 +27,15 @@ class RX(object):
         self.threadStop  = False
         self.threadMutex = True
         self.READLEN     = 1024
+        self.head        = 10
 
     def thread(self): 
         """ RX thread, to send data in parallel with the code
         essa é a funcao executada quando o thread é chamado. 
         """
+        #TIMERRRRRRRRRRRRRRRRRRR (como estimar?)
         while not self.threadStop:
+            start_time = time.time()
             if(self.threadMutex == True):
                 rxTemp, nRx = self.fisica.read(self.READLEN)
                 if (nRx > 0):
@@ -93,59 +96,61 @@ class RX(object):
         self.threadResume()
         return(b)
 
-    def getNData(self,size):
+    def getNData(self, size):
         """ Read N bytes of data from the reception buffer
 
         This function blocks until the number of bytes is received
         """
-#        temPraLer = self.getBufferLen()
-#        print('leu %s ' + str(temPraLer) )
+        head_size = 10
+        tamanho = self.getBufferLen()
         
+        #esperando pegar todos os dados no buffer
+        if self.getBufferLen() < size:
+            print("ERROS!!! TERIA DE LER %s E LEU APENAS %s", (size,tamanho))
+        while(self.getBufferLen() < size):
+             time.sleep(0.05)
 
-        return(self.getBuffer(size))
+        
+        package = self.getBuffer(size)
+        head = package[:head_size]
+        payload = package[head_size:]
+
+        #byte_stuff = bytes.fromhex("AA")
+        #eop = bytes.fromhex("FF FE FD FC")
+        byte_stuff = bytes('A','utf-8')
+        eop = bytes('abcdef','utf-8')
+
+
+        encontrou = False
+
+        for i in range(len(payload)-5):
+            if payload[i:i+6] == eop:
+                if payload[i-1] == byte_stuff[0]:
+                    payload = payload[:i-1] + payload[i+6:] 
+                    
+                    print("Stuffing e EOP retirados")
+                    
+                else:
+                    encontrou = True
+                    print("============== END OF PACKAGE in byte {} =============".format(i+11))
+                    
+        if not encontrou :
+            print("ERRO!!! EOP NÃO ENCONTRADO")
+
+        payload2 = payload[:-6]
+
+        headlen = int.from_bytes(head[-2:], byteorder='big')
+
+        #print de erro do tamanho do head com payload
+        if headlen != len(payload2):
+            print("ERRO!!! TAMANHO INFORMADO NO HEAD NÃO CONDIZ COM PAYLOAD")
+            
+        return(head,payload2)
 
 
     def clearBuffer(self):
         """ Clear the reception buffer
         """
         self.buffer = b""
-    
-    def desfaz_package(self, package):
-        #Faz o desempacotamento dos dados baseado-se no protocolo GG7.
-        #Separa o payload do restante e verifica se o tamanho do payload esta correto
-        head_size = 4
-        found_eop = False
-        erro = 0
-        byte_stuff = bytes.fromhex("AA")
-        eop = bytes.fromhex("FF FE FD FC")
-        head = package[0:4]
-        print(head)
-        package = package[4:]
-        payload_size = int.from_bytes(head, byteorder = "big")
-        for i in range(len(package)):
-            if package[i:i+4] == eop:
-                if package[i-1] == byte_stuff:
-                    #retira os bytes stuff
-                    p1 = package[0:i-1]
-                    p2 = package[i:]
-                    package = p1 + p2
-                else:
-                    found_eop = True
-                    print("EOP encontrado na posição:{0}".format(i))
-                    package = package[0:-4]
-                    if len(package) != payload_size:
-                        print("ERRO! Número de Bytes do Payload diferentes do informado no HEAD. Bytes Payload recebido:{0}".format(len(package)))
-                        print("Bytes que foram enviados:{0}".format(payload_size))
-                        erro = 1
-                    return erro
-        if not found_eop:
-            print("ERRO! EOP não encontrado")
-            erro = 1
-            return erro
-        payload = package
-        print(len(payload))
-        return payload
-                
-
 
 

@@ -30,13 +30,15 @@ class TX(object):
         self.threadStop  = False
 
 
+
     def thread(self):
         """ TX thread, to send data in parallel with the code
         """
+
+        
         while not self.threadStop:
             if(self.threadMutex):
-                self.transLen = self.fisica.write(self.buffer)
-                #print("O tamanho transmitido. IMpressao dentro do thread {}" .format(self.transLen))
+                self.transLen    = self.fisica.write(self.buffer)
                 self.threadMutex = False
 
     def threadStart(self):
@@ -44,6 +46,7 @@ class TX(object):
         """
         self.thread = threading.Thread(target=self.thread, args=())
         self.thread.start()
+
 
     def threadKill(self):
         """ Kill TX thread
@@ -62,7 +65,7 @@ class TX(object):
         """
         self.threadMutex = True
 
-    def sendBuffer(self, data):
+    def sendBuffer(self,tipo,data):
         """ Write a new data to the transmission buffer.
             This function is non blocked.
 
@@ -71,12 +74,40 @@ class TX(object):
         in order to save the new value.
         """
         self.transLen   = 0
-        self.buffer = data
+
+        #empacotamento
+        bytes_nulos = bytes(7)
+        tipo_msg = (tipo).to_bytes(1,byteorder='big')
+        size = ((len(data)).to_bytes(2, byteorder='big'))
+
+        head = b''.join([bytes_nulos, tipo_msg, size])
+        EOP = bytes('abcdef','utf-8')
+        
+        #bytestuffing
+        stuff = bytes('A','utf-8')
+        for i in range(len(data)-5):
+            if data[i:i+6] == EOP:
+                data = data[:i]+stuff+data[i:]
+                break
+            else:
+                pass
+
+        self.buffer = b''.join([head, data,EOP])
+
+        print("-------------------------")
+        print("Overhead: {} ".format((len(self.buffer))/(len(data))))
+        print("-------------------------")
+
+        print("-------------------------")
+        print("Throughput: {} ".format((len(self.buffer))/(self.fisica.baudrate)))
+        print("-------------------------") 
+
         self.threadMutex  = True
 
     def getBufferLen(self):
         """ Return the total size of bytes in the TX buffer
         """
+
         return(len(self.buffer))
 
     def getStatus(self):
@@ -84,36 +115,10 @@ class TX(object):
         """
         #print("O tamanho transmitido. Impressao fora do thread {}" .format(self.transLen))
         return(self.transLen)
-
+        
 
     def getIsBussy(self):
         """ Return true if a transmission is ongoing
         """
         return(self.threadMutex)
 
-
-    def criaPackage(self, payload, tipo_msg):
-        #pega os dados e empacota com HEAD, EOP e byte Stuffing
-
-        byte_stuff = bytes.fromhex("AA")
-        eop = bytes.fromhex("FF FE FD FC")
-        payload_size = len(payload)
-
-        for i in range(len(payload)):
-
-            if payload[i:i+4] == eop:
-                p1 = payload[0:i]
-                p2 = byte_stuff + payload[i:]
-                payload = p1 + p2
-
-        #cria o HEAD
-        payload_head = (payload_size).to_bytes(3, byteorder = "big")
-        message_type = (tipo_msg).to_bytes(1, byteorder = "big")
-        head = message_type + payload_head
-
-        package = head + payload + eop
-        overhead = len(package) / len(payload)
-        print("OverHead:{0}".format(overhead))
-        print(len(payload))
-        print(package)
-        return package, len(payload)
