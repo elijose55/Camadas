@@ -5,9 +5,10 @@ from enlace import *
 from graphic import findimg
 import time
 from identify import *
+from tkinter import *
+from PIL import Image
 
 serialName = "COM3"
-baudrate    = 115200
 
 
 def main():
@@ -30,9 +31,8 @@ def main():
     print("Mensagem tipo 1 enviada")
     time.sleep(2)
 
-    tipo_recebido, head, payload = listen_and_tell(com,1,byte_nulo,2)
+    tipo_recebido, head2, payload2 = listen_and_tell(com,1,byte_nulo,2)
     com.sendData(3,byte_nulo)
-    times.sleep(0.5)
 
     #bnone = bytes(10)
     #com.sendData(1,bnone)
@@ -72,7 +72,7 @@ def main():
 
     print("- Mensagem tipo 4 enviada, aguardando 5 ou 6 -")
 
-    tipo_recebido, head, payload = listen_and_tell_double(com,4,txBuffer,5,6)
+    tipo_recebido, head56, payload56 = listen_and_tell_double(com,4,txBuffer,5,6)
 
 
     # Atualiza dados da transmissão

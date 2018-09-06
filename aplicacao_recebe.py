@@ -7,12 +7,6 @@ from identify import *
 from PIL import Image
 
 serialName = "COM3"
-baudrate    = 115200
-
-
-def tempo_teorico(n_bytes,baudrate):
-    t = (n_bytes*10)/baudrate
-    return t
 
 def main():
 
@@ -30,23 +24,23 @@ def main():
     #---------------------------------------------------------#
 
     byte_nulo = bytes(10)
-    tipo_recebido, head, payload = only_listen(com,1)
+    tipo_recebido, head1, payload1, payloadsize1 = only_listen(com,1)
     com.sendData(2,byte_nulo)
 
     print("- Mensagem tipo 2 enviada, aguardando 3 -")
-    tipo_recebido, head, payload  = listen_and_tell(com,2,bnone,3)
+    tipo_recebido, head3, payload3  = listen_and_tell(com,2,bnone,3)
 
     #---------------------------------------------------------#
     #four , head4 , payload4 , payloadsize4 = only_listen(com,4)
     ##consistência
 
-    tipo_recebido, head4, payload , payloadsize4 = only_listen(com,4)
+    tipo_recebido, head4, payload4 , payloadsize4 = only_listen(com,4)
 
     #Controle de qualidade:
     if int.from_bytes(head4[-2:],byteorder = "big") != payloadsize4:
         com.sendData(6,byte_nulo)
         print("- Mensagem tipo 6 enviada -")
-        tipo_recebido, head4, payload , payloadsize4 = only_listen(com,4)
+        tipo_recebido, head4, payload4 , payloadsize4 = only_listen(com,4)
 
     else:
         com.sendData(5,byte_nulo)
@@ -55,8 +49,9 @@ def main():
 
 
     #previsão de tempo de transmissão
-    tempo_teorico = (payloadsize4*10)/baudrate
+    
     bdr = com.tx.fisica.baudrate
+    tempo_teorico = (payloadsize4*10)/bdr
     print("-------------------------")
     print("Tempo esperado da transmissão : {0} bytes".format(tempo_teorico)
     print("-------------------------")
@@ -67,7 +62,7 @@ def main():
 
     # Salva a Imagem
     x = open('NovaImg.png','wb')
-    x.write(rxBuffer)
+    x.write(payload4)
     x.close()
 
 
@@ -76,7 +71,7 @@ def main():
     print("Imagem salva")
     print("-------------------------")
 
-    tipo_recebido, head4, payload , payloadsize4 = only_listen(com,7)
+    tipo_recebido , head7 , payload7 , payloadsize7 = only_listen(com,7)
     print("Encerramento foi solicitado e aceito")
     com.disable()
 
