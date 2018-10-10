@@ -30,15 +30,13 @@ class TX(object):
         self.threadStop  = False
 
 
-
     def thread(self):
         """ TX thread, to send data in parallel with the code
         """
-
-        
         while not self.threadStop:
             if(self.threadMutex):
-                self.transLen    = self.fisica.write(self.buffer)
+                self.transLen = self.fisica.write(self.buffer)
+                #print("O tamanho transmitido. IMpressao dentro do thread {}" .format(self.transLen))
                 self.threadMutex = False
 
     def threadStart(self):
@@ -46,7 +44,6 @@ class TX(object):
         """
         self.thread = threading.Thread(target=self.thread, args=())
         self.thread.start()
-
 
     def threadKill(self):
         """ Kill TX thread
@@ -65,7 +62,7 @@ class TX(object):
         """
         self.threadMutex = True
 
-    def sendBuffer(self,tipo,data):
+    def sendBuffer(self, data):
         """ Write a new data to the transmission buffer.
             This function is non blocked.
 
@@ -74,40 +71,12 @@ class TX(object):
         in order to save the new value.
         """
         self.transLen   = 0
-
-        #empacotamento
-        und = bytes(7)
-        mtype = (tipo).to_bytes(1,byteorder='big')
-        size = ((len(data)).to_bytes(2, byteorder='big'))
-
-        head = b''.join([und, mtype, size])
-        EOP = bytes('vtncgv','utf-8')
-        
-        #bytestuffing
-        stuff = bytes('P','utf-8')
-        for i in range(len(data)-5):
-            if data[i:i+6] == EOP:
-                data = data[:i]+stuff+data[i:]
-                break
-            else:
-                pass
-
-        self.buffer = b''.join([head, data,EOP])
-
-        print("-------------------------")
-        print("Overhead: {} ".format((len(self.buffer))/(len(data))))
-        print("-------------------------")
-
-        print("-------------------------")
-        print("Throughput: {} ".format((len(self.buffer))/(self.fisica.baudrate)))
-        print("-------------------------") 
-
+        self.buffer = data
         self.threadMutex  = True
 
     def getBufferLen(self):
         """ Return the total size of bytes in the TX buffer
         """
-
         return(len(self.buffer))
 
     def getStatus(self):
@@ -115,10 +84,47 @@ class TX(object):
         """
         #print("O tamanho transmitido. Impressao fora do thread {}" .format(self.transLen))
         return(self.transLen)
-        
+
 
     def getIsBussy(self):
         """ Return true if a transmission is ongoing
         """
         return(self.threadMutex)
+
+
+    def criaPackage(self, payload, package_number, total_packages, package_error, message_type, crc):
+        #(numero do pacote, total de pacotes, erro/pacote esperado, size do payload(3), CRC(3), tipo da msg)
+
+        #pega os dados e empacota com HEAD, EOP e byte Stuffing
+
+        byte_stuff = bytes.fromhex("FF AA FE FD FC")
+        eop = bytes.fromhex("FF FE FD FC")
+        payload_size = len(payload)
+        print('--------------------')
+        print('tamanho do payload:',payload_size)
+
+
+        #cria o HEAD
+        payload_head = (payload_size).to_bytes(3, byteorder = "big")        #tamanho do payload
+        message_type = (message_type).to_bytes(1, byteorder = "big")        #tipo de mensagem
+        package_number = (package_number).to_bytes(1, byteorder = "big")    #numero do pacote
+        total_packages = (total_packages).to_bytes(1, byteorder = "big")    #total de pacotes
+        package_error = (package_error).to_bytes(1, byteorder = "big")      #erro de pacote 
+        crc_payload = (crc).to_bytes(3, byteorder = "big")                  #crc do payload
+
+        und = bytes(5)
+
+
+        head = package_number + total_packages + package_error + payload_head + crc_payload + message_type
+
+        check = payload.find(eop)
+        if check != -1:
+            payload = payload.replace(eop, byte_stuff)
+
+
+        package = head + payload + eop
+        overhead = len(package) / len(payload)
+        print("overHead:{0}".format(overhead))
+        print('--------------------')
+        return package, len(payload)
 

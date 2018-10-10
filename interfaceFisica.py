@@ -8,6 +8,8 @@
 
 # Importa pacote de comunicação serial
 import serial
+import time
+import sys
 
 # importa pacote para conversão binário ascii
 import binascii
@@ -21,8 +23,8 @@ class fisica(object):
     def __init__(self, name):
         self.name        = name
         self.port        = None
-        #self.baudrate    = 115200
-        self.baudrate    = 9600
+        self.baudrate    = 115200
+        #self.baudrate    = 9600
         self.bytesize    = serial.EIGHTBITS
         self.parity      = serial.PARITY_NONE
         self.stop        = serial.STOPBITS_ONE
@@ -48,8 +50,12 @@ class fisica(object):
     def flush(self):
         """ Clear serial data
         """
+        #starttime = time.time()
         self.port.flushInput()
         self.port.flushOutput()
+        #finaltime = time.time() - starttime
+
+        #return finaltime
 
     def encode(self, data):
         """ Encode TX as ASCII data for transmission
@@ -72,6 +78,9 @@ class fisica(object):
         Software flow control between both
         sides of communication.
         """
+        #print(txBuffer)
+        #print("----------------")
+        #print(self.encode(txBuffer))
         nTx = self.port.write(self.encode(txBuffer))
         self.port.flush()
         return(nTx/2)
@@ -83,7 +92,7 @@ class fisica(object):
         devemos verificar isso para evitar que a funcao
         self.decode seja chamada com números ímpares.
         """
-        rxBuffer = self.port.read(nBytes) #le a porta
+        rxBuffer = self.port.read(nBytes)
         rxBufferConcat = self.rxRemain + rxBuffer
         nValid = (len(rxBufferConcat)//2)*2
         rxBufferValid = rxBufferConcat[0:nValid]
@@ -96,8 +105,7 @@ class fisica(object):
             nRx = len(rxBuffer)
             return(rxBufferDecoded, nRx)
         except :
+            print ("Unexpected error:", sys.exc_info()[0])
             print("[ERRO] interfaceFisica, read, decode. buffer : {}".format(rxBufferValid))
-
-
             return(b"", 0)
 

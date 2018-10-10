@@ -27,14 +27,12 @@ class RX(object):
         self.threadStop  = False
         self.threadMutex = True
         self.READLEN     = 1024
-        self.head        = 10
 
     def thread(self): 
         """ RX thread, to send data in parallel with the code
         essa é a funcao executada quando o thread é chamado. 
         """
         while not self.threadStop:
-            start_time = time.time()
             if(self.threadMutex == True):
                 rxTemp, nRx = self.fisica.read(self.READLEN)
                 if (nRx > 0):
@@ -95,62 +93,59 @@ class RX(object):
         self.threadResume()
         return(b)
 
-    def getNData(self, size):
+    def getNData(self,size):
         """ Read N bytes of data from the reception buffer
-
         This function blocks until the number of bytes is received
         """
-        head_size = 10
-        tamanho = self.getBufferLen()
-        
-        #esperando pegar todos os dados no buffer
-        if self.getBufferLen() < size:
-            print("ERROS!!! TERIA DE LER %s E LEU APENAS %s", (size,tamanho))
-        while(self.getBufferLen() < size):
-             time.sleep(0.05)
-
-        
-        dados = self.getBuffer(size)
-        head = dados[:10]
-        payload = dados[10:]
-
-        #byte_stuff = bytes.fromhex("AA")
-        #eop = bytes.fromhex("FF FE FD FC")
-        stuff = bytes('P','utf-8')
-        EOP = bytes('vtncgv','utf-8')
-
-
-        encontrou = False
-
-        for i in range(len(payload)-5):
-            if payload[i:i+6] == EOP:
-                if payload[i-1] == stuff[0]:
-                    payload = payload[:i-1] + payload[i+6:] 
-                    
-                    print("Stuffing e EOP retirados")
-                    
-                else:
-                    encontrou = True
-                    print("============== END OF PACKAGE in byte {} =============".format(i+11))
-                    
-        if not encontrou :
-            print("ERRO!!! EOP NÃO ENCONTRADO")
-
-        payload2 = payload[:-6]
-
-        headlen = int.from_bytes(head[-2:], byteorder='big')
-
-        #print de erro do tamanho do head com payload
-        if headlen != len(payload2):
-            print("ERRO!!! TAMANHO INFORMADO NO HEAD NÃO CONDIZ COM PAYLOAD")
-        
-        print(head)
-        return(head,payload2)
+        return(self.getBuffer(size))
 
 
     def clearBuffer(self):
         """ Clear the reception buffer
         """
         self.buffer = b""
+    
+    def desfaz_package(self, package):
+        #Faz o desempacotamento dos dados baseado-se no protocolo GOOD.
+        #Separa o payload do restante e verifica se o tamanho do payload esta correto
 
+        #head(numero do pacote, total de pacotes, erro/pacote esperado, size do payload(3), CRC(3), tipo da msg)
+
+        head_size = 10
+        erro = 51
+        byte_stuff = bytes.fromhex("FF AA FE FD FC")
+        eop = bytes.fromhex("FF FE FD FC")
+
+        payload_size = int.from_bytes(package[3:6], byteorder = "big")
+
+        head = package[0:10]
+        #print('head',head)
+        package = package[10:]  #pacote sem o head (payload+eop)
+        #print('package',package)
+
+        #head_payload = head[7:] #parte do head que representa o size do payload
+        #payload_size = int.from_bytes(head_payload, byteorder = "big")  #size do payload
+
+        check = package.find(eop)
+
+        if (check!=-1): #caso o eop seja encontrado
+            payload = package[:check] #apenas o payload
+            payload = payload.replace(byte_stuff, eop) #retira o bytestuff
+
+            if (len(payload) == payload_size): #se o tamanho indicado no head corresponde ao tamanho real
+                return (head+payload)
+            else: #caso os tamanhos sejam diferentes
+                print('--------------------')
+                print("ERRO! Número de Bytes do Payload diferentes do informado no HEAD. Tamanho do payload recebido:{0}".format(len(payload)))
+                print("Tamanho do payload esperado:{0}".format(payload_size))
+                print('--------------------')
+                erro = 51
+                return erro
+
+        else: #caso eop nao seja encontrado
+            print('--------------------')
+            print("ERRO! EOP não encontrado")
+            print('--------------------')
+            erro = 51
+            return erro
 
